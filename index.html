@@ -1,91 +1,1131 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<title>Dental AI VR</title>
-<meta name="viewport" content="width=device-width">
-
-<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/aframe-environment-component@1.3.4/dist/aframe-environment-component.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/aframe-super-hands-component@5.0.2/dist/aframe-super-hands.min.js"></script>
-
-<style>
-body { margin:0; background:#000; }
-</style>
+    <meta charset="utf-8">
+    <title>DENTAL AI VR - Cinematic Experience</title>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    <script src="https://unpkg.com/aframe-environment-component@1.3.2/dist/aframe-environment-component.min.js"></script>
 </head>
-
 <body>
-<a-scene
-  loading-screen="enabled: false"
-  background="color: #000"
-  renderer="antialias: true"
-  vr-mode-ui="enabled: true"
-  webxr="optionalFeatures: local-floor">
+    <a-scene 
+        background="color: #000000"
+        fog="type: exponential; color: #000; density: 0.1"
+    >
+        <!-- Audio Assets -->
+        <a-assets>
+            <!-- Spatial Audio Sources - Moving Around User -->
+            <audio id="heartbeat" src="https://cdn.freesound.org/previews/80/80321_1022651-lq.mp3" preload="auto"></audio>
+            <audio id="breathing" src="https://cdn.freesound.org/previews/387/387848_5121236-lq.mp3" preload="auto"></audio>
+            <audio id="bass-drop" src="https://cdn.freesound.org/previews/414/414214_6044691-lq.mp3" preload="auto"></audio>
+            <audio id="energy-lock" src="https://cdn.freesound.org/previews/341/341695_5858296-lq.mp3" preload="auto"></audio>
+            <audio id="harmonic-tone" src="https://cdn.freesound.org/previews/411/411642_6896725-lq.mp3" preload="auto"></audio>
+            
+            <!-- Narration (generate with OpenAI TTS) -->
+            <audio id="narration-1" src="audio_narrations/scene1.mp3" preload="auto"></audio>
+            <audio id="narration-2" src="audio_narrations/scene2.mp3" preload="auto"></audio>
+            <audio id="narration-3" src="audio_narrations/scene3.mp3" preload="auto"></audio>
+            <audio id="narration-4" src="audio_narrations/scene4.mp3" preload="auto"></audio>
+            <audio id="narration-5" src="audio_narrations/scene5.mp3" preload="auto"></audio>
+        </a-assets>
 
-<!-- LIGHTING -->
-<a-entity light="type: ambient; intensity: 0.4"></a-entity>
-<a-entity light="type: directional; intensity: 1.2" position="5 10 5"></a-entity>
+        <!-- Camera Rig -->
+        <a-entity id="rig" position="0 1.6 0">
+            <a-entity 
+                id="camera" 
+                camera 
+                look-controls="pointerLockEnabled: false"
+            >
+                <!-- Haptic feedback via controller vibration handled in JS -->
+            </a-entity>
 
-<!-- ENVIRONMENT -->
-<a-entity environment="
-  preset: sci-fi;
-  ground: flat;
-  grid: cross;
-  gridColor: #00ffff;
-  groundColor: #020914;
-  skyColor: #000">
-</a-entity>
+            <!-- Controllers -->
+            <a-entity 
+                id="left-hand"
+                oculus-touch-controls="hand: left"
+                vive-controls="hand: left"
+            ></a-entity>
+            <a-entity 
+                id="right-hand"
+                oculus-touch-controls="hand: right"
+                vive-controls="hand: right"
+            ></a-entity>
+        </a-entity>
 
-<!-- CAMERA -->
-<a-entity id="rig" position="0 1.6 4">
-  <a-camera></a-camera>
-  <a-entity hand-controls="left" super-hands></a-entity>
-  <a-entity hand-controls="right" super-hands></a-entity>
-</a-entity>
+        <!-- MOMENT 1: DARKNESS & BREATH -->
+        <a-entity id="moment-1" visible="true">
+            <!-- Heartbeat Sound (behind user) -->
+            <a-entity 
+                position="0 1.6 2"
+                sound="src: #heartbeat; loop: true; volume: 0.3; positional: true; refDistance: 2"
+            ></a-entity>
+            
+            <!-- Breathing Sound (circling user) -->
+            <a-entity 
+                id="breath-orbit"
+                position="0 1.6 0"
+            >
+                <a-entity 
+                    position="3 0 0"
+                    sound="src: #breathing; loop: true; volume: 0.2; positional: true; refDistance: 3"
+                    animation="property: rotation; to: 0 360 0; dur: 20000; easing: linear; loop: true"
+                ></a-entity>
+            </a-entity>
 
-<!-- START BUTTON -->
-<a-entity id="startUI" position="0 1.6 -2">
-  <a-box id="startBtn"
-    width="2.5" height="0.6" depth="0.2"
-    color="#00ffff"></a-box>
+            <!-- Awakening Particles -->
+            <a-entity id="awakening-particles">
+                <!-- Particles will be generated by JS -->
+            </a-entity>
+        </a-entity>
 
-  <a-text value="ENTER EXPERIENCE"
-    position="0 0 0.15"
-    align="center"
-    color="#000"
-    width="4"></a-text>
-</a-entity>
+        <!-- MOMENT 2: WORLD FORMS AROUND THEM -->
+        <a-entity id="moment-2" visible="false">
+            <!-- Floor Grid (grows from center) -->
+            <a-plane 
+                id="floor-grid"
+                rotation="-90 0 0" 
+                width="30" 
+                height="30" 
+                position="0 0 0"
+                material="
+                    color: #0a1428; 
+                    shader: flat; 
+                    opacity: 0;
+                    wireframe: true;
+                    wireframeLinewidth: 2
+                "
+                animation__appear="
+                    property: material.opacity; 
+                    from: 0; 
+                    to: 0.8; 
+                    dur: 3000; 
+                    delay: 500;
+                    easing: easeOutQuad
+                "
+                animation__scale="
+                    property: scale; 
+                    from: 0.1 0.1 0.1; 
+                    to: 1 1 1; 
+                    dur: 3000; 
+                    delay: 500;
+                    easing: easeOutQuad
+                "
+            ></a-plane>
 
-<!-- AI AVATAR -->
-<a-entity id="aiRoom" position="0 1.6 -8" visible="false">
-  <a-sphere radius="0.45"
-    material="color:#00ffff; emissive:#00ffff"
-    animation="property: scale; from: 0 0 0; to: 1 1 1; dur: 2000"
-    grabbable hoverable>
-  </a-sphere>
-</a-entity>
+            <!-- Cyan Grid Lines -->
+            <a-entity id="grid-lines">
+                <!-- Vertical lines -->
+                <a-plane 
+                    width="0.05" 
+                    height="30" 
+                    position="-15 0.01 0"
+                    rotation="-90 0 0"
+                    material="color: #00ffff; opacity: 0.3; shader: flat"
+                    animation="property: material.opacity; from: 0; to: 0.5; dur: 2000; delay: 1000"
+                ></a-plane>
+                <a-plane 
+                    width="0.05" 
+                    height="30" 
+                    position="0 0.01 0"
+                    rotation="-90 0 0"
+                    material="color: #00ffff; opacity: 0.3; shader: flat"
+                    animation="property: material.opacity; from: 0; to: 0.5; dur: 2000; delay: 1200"
+                ></a-plane>
+                <a-plane 
+                    width="0.05" 
+                    height="30" 
+                    position="15 0.01 0"
+                    rotation="-90 0 0"
+                    material="color: #00ffff; opacity: 0.3; shader: flat"
+                    animation="property: material.opacity; from: 0; to: 0.5; dur: 2000; delay: 1400"
+                ></a-plane>
+                
+                <!-- Horizontal lines -->
+                <a-plane 
+                    width="30" 
+                    height="0.05" 
+                    position="0 0.01 -15"
+                    rotation="-90 0 0"
+                    material="color: #00ffff; opacity: 0.3; shader: flat"
+                    animation="property: material.opacity; from: 0; to: 0.5; dur: 2000; delay: 1600"
+                ></a-plane>
+                <a-plane 
+                    width="30" 
+                    height="0.05" 
+                    position="0 0.01 0"
+                    rotation="-90 0 0"
+                    material="color: #00ffff; opacity: 0.3; shader: flat"
+                    animation="property: material.opacity; from: 0; to: 0.5; dur: 2000; delay: 1800"
+                ></a-plane>
+                <a-plane 
+                    width="30" 
+                    height="0.05" 
+                    position="0 0.01 15"
+                    rotation="-90 0 0"
+                    material="color: #00ffff; opacity: 0.3; shader: flat"
+                    animation="property: material.opacity; from: 0; to: 0.5; dur: 2000; delay: 2000"
+                ></a-plane>
+            </a-entity>
 
-<script>
-document.querySelector('#startBtn').addEventListener('click', () => {
+            <!-- Wall Assembly (appears piece by piece) -->
+            <a-entity id="walls">
+                <!-- Front wall -->
+                <a-plane 
+                    width="30" 
+                    height="8" 
+                    position="0 4 -15"
+                    material="color: #0d1b2d; opacity: 0; shader: flat"
+                    animation="property: material.opacity; from: 0; to: 0.7; dur: 2000; delay: 2500"
+                ></a-plane>
+                
+                <!-- Left wall -->
+                <a-plane 
+                    width="30" 
+                    height="8" 
+                    position="-15 4 0"
+                    rotation="0 90 0"
+                    material="color: #0d1b2d; opacity: 0; shader: flat"
+                    animation="property: material.opacity; from: 0; to: 0.7; dur: 2000; delay: 2700"
+                ></a-plane>
+                
+                <!-- Right wall -->
+                <a-plane 
+                    width="30" 
+                    height="8" 
+                    position="15 4 0"
+                    rotation="0 -90 0"
+                    material="color: #0d1b2d; opacity: 0; shader: flat"
+                    animation="property: material.opacity; from: 0; to: 0.7; dur: 2000; delay: 2900"
+                ></a-plane>
+            </a-entity>
 
-  // Hide UI
-  document.querySelector('#startUI').setAttribute('visible', false);
-  document.querySelector('#aiRoom').setAttribute('visible', true);
+            <!-- Rippling Light Waves -->
+            <a-ring
+                id="light-ripple-1"
+                radius-inner="1"
+                radius-outer="1.2"
+                position="0 0.02 0"
+                rotation="-90 0 0"
+                material="color: #00ffff; opacity: 0.8; shader: flat; side: double"
+                animation__scale="
+                    property: scale; 
+                    from: 0.1 0.1 0.1; 
+                    to: 15 15 15; 
+                    dur: 4000; 
+                    delay: 3000;
+                    easing: easeOutQuad
+                "
+                animation__fade="
+                    property: material.opacity; 
+                    from: 0.8; 
+                    to: 0; 
+                    dur: 4000; 
+                    delay: 3000;
+                    easing: easeOutQuad
+                "
+            ></a-ring>
 
-  // Create audio AFTER interaction
-  const voice = document.createElement('a-entity');
-  voice.setAttribute('sound', {
-    src: 'url(audio_narrations/scene1.mp3)',
-    autoplay: true,
-    positional: true,
-    refDistance: 1,
-    maxDistance: 20
-  });
+            <!-- Bass Rumble Source -->
+            <a-entity 
+                position="0 0 0"
+                sound="src: #bass-drop; volume: 0.6; positional: false"
+            ></a-entity>
 
-  document.querySelector('a-scene').appendChild(voice);
-});
-</script>
+            <!-- Narration Orbiting -->
+            <a-entity id="narrator-orbit-1" position="0 1.6 0">
+                <a-entity 
+                    position="5 0 0"
+                    sound="src: #narration-1; volume: 1; positional: true; refDistance: 3"
+                    animation="property: rotation; to: 0 360 0; dur: 15000; easing: linear; loop: false"
+                ></a-entity>
+            </a-entity>
+        </a-entity>
 
-</a-scene>
+        <!-- MOMENT 3: AI AWAKENS -->
+        <a-entity id="moment-3" visible="false">
+            <!-- AI Avatar materializing from particles -->
+            <a-entity id="ai-avatar" position="0 2 -4">
+                <!-- Particle cloud formation -->
+                <a-entity id="particle-cloud">
+                    <!-- Generated dynamically -->
+                </a-entity>
+
+                <!-- Avatar Body (fades in after particles) -->
+                <a-entity id="avatar-body" visible="false">
+                    <!-- Head -->
+                    <a-sphere 
+                        id="avatar-head"
+                        radius="0.4" 
+                        position="0 0.6 0"
+                        material="
+                            color: #1a6d8d; 
+                            emissive: #00ffff; 
+                            emissiveIntensity: 0.3;
+                            opacity: 0
+                        "
+                        animation__appear="
+                            property: material.opacity; 
+                            from: 0; 
+                            to: 0.95; 
+                            dur: 2000;
+                            delay: 1000
+                        "
+                    >
+                        <!-- Eyes (ignite last) -->
+                        <a-sphere 
+                            id="eye-left"
+                            position="-0.12 0.05 0.3" 
+                            radius="0.05" 
+                            material="
+                                color: #00ffff; 
+                                emissive: #00ffff;
+                                emissiveIntensity: 0;
+                                shader: flat
+                            "
+                            animation__ignite="
+                                property: material.emissiveIntensity; 
+                                from: 0; 
+                                to: 2; 
+                                dur: 500;
+                                delay: 3000
+                            "
+                            animation__pulse="
+                                property: scale;
+                                from: 1 1 1;
+                                to: 1.2 1.2 1.2;
+                                dur: 1000;
+                                delay: 3500;
+                                loop: true;
+                                dir: alternate;
+                                easing: easeInOutSine
+                            "
+                        ></a-sphere>
+                        <a-sphere 
+                            id="eye-right"
+                            position="0.12 0.05 0.3" 
+                            radius="0.05" 
+                            material="
+                                color: #00ffff; 
+                                emissive: #00ffff;
+                                emissiveIntensity: 0;
+                                shader: flat
+                            "
+                            animation__ignite="
+                                property: material.emissiveIntensity; 
+                                from: 0; 
+                                to: 2; 
+                                dur: 500;
+                                delay: 3000
+                            "
+                            animation__pulse="
+                                property: scale;
+                                from: 1 1 1;
+                                to: 1.2 1.2 1.2;
+                                dur: 1000;
+                                delay: 3500;
+                                loop: true;
+                                dir: alternate;
+                                easing: easeInOutSine
+                            "
+                        ></a-sphere>
+                    </a-sphere>
+
+                    <!-- Body -->
+                    <a-cylinder 
+                        height="1.2" 
+                        radius="0.35" 
+                        position="0 -0.3 0"
+                        material="
+                            color: #1a6d8d;
+                            emissive: #00ffff;
+                            emissiveIntensity: 0.2;
+                            opacity: 0
+                        "
+                        animation__appear="
+                            property: material.opacity; 
+                            from: 0; 
+                            to: 0.95; 
+                            dur: 2000;
+                            delay: 1500
+                        "
+                    ></a-cylinder>
+
+                    <!-- Lab Coat -->
+                    <a-box 
+                        width="0.8" 
+                        height="1" 
+                        depth="0.3"
+                        position="0 -0.3 0"
+                        material="
+                            color: #ffffff;
+                            opacity: 0
+                        "
+                        animation__appear="
+                            property: material.opacity; 
+                            from: 0; 
+                            to: 0.9; 
+                            dur: 2000;
+                            delay: 2000
+                        "
+                    ></a-box>
+
+                    <!-- Energy Field -->
+                    <a-ring
+                        radius-inner="0.8"
+                        radius-outer="0.9"
+                        position="0 0 0"
+                        rotation="-90 0 0"
+                        material="color: #00ffff; opacity: 0.4; shader: flat; side: double"
+                        animation="
+                            property: rotation; 
+                            to: -90 360 0; 
+                            dur: 10000; 
+                            easing: linear; 
+                            loop: true
+                        "
+                    ></a-ring>
+                </a-entity>
+
+                <!-- Lean toward user (subtle) -->
+                <a-animation
+                    attribute="rotation"
+                    from="0 0 0"
+                    to="5 0 0"
+                    dur="3000"
+                    delay="4000"
+                    easing="ease-out"
+                ></a-animation>
+            </a-entity>
+
+            <!-- Energy Lock Sound -->
+            <a-entity 
+                position="0 2 -4"
+                sound="src: #energy-lock; volume: 0.5; positional: true; refDistance: 5"
+            ></a-entity>
+
+            <!-- Narration -->
+            <a-entity 
+                position="0 3 -4"
+                sound="src: #narration-2; volume: 1; positional: true; refDistance: 4"
+            ></a-entity>
+        </a-entity>
+
+        <!-- MOMENT 4: X-RAY ANALYSIS -->
+        <a-entity id="moment-4" visible="false">
+            <!-- X-Ray Panel (true volumetric depth) -->
+            <a-entity id="xray-panel" position="0 2.5 -5">
+                <!-- Background panel -->
+                <a-plane 
+                    width="3" 
+                    height="2.5"
+                    material="
+                        color: #0a2838;
+                        opacity: 0.95;
+                        shader: flat
+                    "
+                    animation__float="
+                        property: position;
+                        from: 0 2.5 -5;
+                        to: 0 2.7 -4.8;
+                        dur: 3000;
+                        easing: easeInOutSine;
+                        loop: true;
+                        dir: alternate
+                    "
+                >
+                    <!-- X-ray teeth silhouettes -->
+                    <a-circle 
+                        radius="0.25" 
+                        position="-0.8 0.3 0.01"
+                        material="color: #80b0c0; opacity: 0.7; shader: flat"
+                    ></a-circle>
+                    <a-circle 
+                        radius="0.25" 
+                        position="-0.3 0.3 0.01"
+                        material="color: #80b0c0; opacity: 0.7; shader: flat"
+                    ></a-circle>
+                    <a-circle 
+                        radius="0.25" 
+                        position="0.3 0.3 0.01"
+                        material="color: #80b0c0; opacity: 0.7; shader: flat"
+                    ></a-circle>
+                    <a-circle 
+                        radius="0.25" 
+                        position="0.8 0.3 0.01"
+                        material="color: #80b0c0; opacity: 0.7; shader: flat"
+                    ></a-circle>
+
+                    <!-- Anomaly Detection (pulsing like heartbeat) -->
+                    <a-ring
+                        id="anomaly-1"
+                        radius-inner="0.22"
+                        radius-outer="0.28"
+                        position="0.3 0.3 0.02"
+                        material="color: #ff0000; opacity: 0.8; shader: flat"
+                        animation__pulse="
+                            property: scale;
+                            from: 1 1 1;
+                            to: 1.5 1.5 1.5;
+                            dur: 1000;
+                            easing: easeInOutSine;
+                            loop: true;
+                            dir: alternate
+                        "
+                        animation__heartbeat="
+                            property: material.opacity;
+                            from: 0.8;
+                            to: 0.3;
+                            dur: 1000;
+                            easing: easeInOutSine;
+                            loop: true;
+                            dir: alternate
+                        "
+                    ></a-ring>
+
+                    <!-- Scan Beam (with bass hum) -->
+                    <a-plane
+                        id="scan-beam"
+                        width="3"
+                        height="0.03"
+                        position="0 1.2 0.02"
+                        material="
+                            color: #00ffff;
+                            emissive: #00ffff;
+                            emissiveIntensity: 1.5;
+                            shader: flat;
+                            opacity: 0.8
+                        "
+                        animation="
+                            property: position;
+                            from: 0 1.2 0.02;
+                            to: 0 -1.2 0.02;
+                            dur: 3000;
+                            easing: linear;
+                            loop: true
+                        "
+                    ></a-plane>
+                </a-plane>
+
+                <!-- Frame (glowing) -->
+                <a-box 
+                    width="3.1" 
+                    height="2.6" 
+                    depth="0.05"
+                    position="0 0 -0.03"
+                    material="
+                        color: #00ffff;
+                        emissive: #00ffff;
+                        emissiveIntensity: 0.5;
+                        opacity: 0.3;
+                        shader: flat
+                    "
+                    animation__glow="
+                        property: material.emissiveIntensity;
+                        from: 0.5;
+                        to: 1.2;
+                        dur: 2000;
+                        easing: easeInOutSine;
+                        loop: true;
+                        dir: alternate
+                    "
+                ></a-box>
+            </a-entity>
+
+            <!-- Data typing into space -->
+            <a-entity id="data-display" position="0 4 -5">
+                <a-text 
+                    value="RADIOLUCENCY DETECTED"
+                    align="center"
+                    width="4"
+                    color="#ff4444"
+                    opacity="0"
+                    animation__appear="
+                        property: opacity;
+                        from: 0;
+                        to: 1;
+                        dur: 500;
+                        delay: 2000
+                    "
+                ></a-text>
+                <a-text 
+                    value="PROBABILITY: 92%"
+                    align="center"
+                    width="3"
+                    color="#00ffff"
+                    position="0 -0.3 0"
+                    opacity="0"
+                    animation__appear="
+                        property: opacity;
+                        from: 0;
+                        to: 1;
+                        dur: 500;
+                        delay: 2500
+                    "
+                ></a-text>
+            </a-entity>
+
+            <!-- Shockwave on detection -->
+            <a-ring
+                id="detection-shockwave"
+                radius-inner="0.5"
+                radius-outer="0.6"
+                position="0 2.5 -4.99"
+                material="color: #ff4444; opacity: 0; shader: flat"
+                animation__expand="
+                    property: scale;
+                    from: 1 1 1;
+                    to: 20 20 20;
+                    dur: 2000;
+                    delay: 2500;
+                    easing: easeOutQuad
+                "
+                animation__fade="
+                    property: material.opacity;
+                    from: 0.8;
+                    to: 0;
+                    dur: 2000;
+                    delay: 2500;
+                    easing: easeOutQuad
+                "
+            ></a-ring>
+
+            <!-- Bass drop on detection -->
+            <a-entity 
+                position="0 2.5 -5"
+                sound="src: #bass-drop; volume: 0.5; positional: true"
+            ></a-entity>
+
+            <!-- Narration (precise, cold) -->
+            <a-entity 
+                position="2 3 -5"
+                sound="src: #narration-3; volume: 1; positional: true; refDistance: 4"
+            ></a-entity>
+        </a-entity>
+
+        <!-- MOMENT 5: IMPLANT PLANNING -->
+        <a-entity id="moment-5" visible="false">
+            <!-- 3D Tooth between user's hands -->
+            <a-entity 
+                id="implant-model" 
+                position="0 1.8 -1.5"
+                animation__rotate="
+                    property: rotation;
+                    to: 0 360 0;
+                    dur: 15000;
+                    easing: linear;
+                    loop: true
+                "
+            >
+                <!-- Crown -->
+                <a-cone
+                    height="0.8"
+                    radius-bottom="0.35"
+                    radius-top="0.18"
+                    position="0 0.5 0"
+                    material="
+                        color: #e0f0ff;
+                        opacity: 0.95;
+                        shader: flat
+                    "
+                ></a-cone>
+
+                <!-- Root -->
+                <a-cone
+                    height="0.7"
+                    radius-bottom="0.18"
+                    radius-top="0.06"
+                    position="0 -0.3 0"
+                    material="
+                        color: #c0d8e8;
+                        opacity: 0.9;
+                        shader: flat
+                    "
+                ></a-cone>
+
+                <!-- Implant Post (glowing) -->
+                <a-cylinder
+                    id="implant-post"
+                    height="0.9"
+                    radius="0.09"
+                    position="0 -0.05 0"
+                    material="
+                        color: #00ff88;
+                        emissive: #00ff88;
+                        emissiveIntensity: 1.5;
+                        opacity: 0.98;
+                        shader: flat
+                    "
+                    animation__glow="
+                        property: material.emissiveIntensity;
+                        from: 1.5;
+                        to: 2.5;
+                        dur: 1000;
+                        easing: easeInOutSine;
+                        loop: true;
+                        dir: alternate
+                    "
+                ></a-cylinder>
+
+                <!-- Measurement Lines (snap into place) -->
+                <a-entity id="measurements">
+                    <!-- Diameter line -->
+                    <a-box 
+                        width="0.6" 
+                        height="0.02" 
+                        depth="0.02"
+                        position="0.4 0 0"
+                        material="color: #00ffff; shader: flat"
+                        animation__snap="
+                            property: scale;
+                            from: 0 1 1;
+                            to: 1 1 1;
+                            dur: 300;
+                            delay: 1000;
+                            easing: easeOutBack
+                        "
+                    ></a-box>
+                    <a-text 
+                        value="4.2mm"
+                        align="center"
+                        width="1.5"
+                        color="#00ffff"
+                        position="0.7 0 0"
+                        opacity="0"
+                        animation__appear="
+                            property: opacity;
+                            from: 0;
+                            to: 1;
+                            dur: 300;
+                            delay: 1300
+                        "
+                    ></a-text>
+
+                    <!-- Length line -->
+                    <a-box 
+                        width="0.02" 
+                        height="1" 
+                        depth="0.02"
+                        position="0 -0.05 0.4"
+                        material="color: #00ffff; shader: flat"
+                        animation__snap="
+                            property: scale;
+                            from: 1 0 1;
+                            to: 1 1 1;
+                            dur: 300;
+                            delay: 1500;
+                            easing: easeOutBack
+                        "
+                    ></a-box>
+                    <a-text 
+                        value="12mm"
+                        align="center"
+                        width="1.5"
+                        color="#00ffff"
+                        position="0 -0.05 0.7"
+                        opacity="0"
+                        animation__appear="
+                            property: opacity;
+                            from: 0;
+                            to: 1;
+                            dur: 300;
+                            delay: 1800
+                        "
+                    ></a-text>
+                </a-entity>
+
+                <!-- Perfect alignment green glow -->
+                <a-ring
+                    id="alignment-glow"
+                    radius-inner="0.5"
+                    radius-outer="0.55"
+                    position="0 0 0"
+                    rotation="-90 0 0"
+                    material="color: #00ff00; opacity: 0; shader: flat; side: double"
+                    animation__pulse="
+                        property: material.opacity;
+                        from: 0;
+                        to: 0.8;
+                        dur: 500;
+                        delay: 2500
+                    "
+                ></a-ring>
+            </a-entity>
+
+            <!-- Harmonic tone on perfect alignment -->
+            <a-entity 
+                position="0 1.8 -1.5"
+                sound="src: #harmonic-tone; volume: 0.4; positional: true"
+            ></a-entity>
+
+            <!-- Narration -->
+            <a-entity 
+                position="0 3 -1.5"
+                sound="src: #narration-4; volume: 1; positional: true; refDistance: 3"
+            ></a-entity>
+        </a-entity>
+
+        <!-- MOMENT 6: FINALE - SILENCE → IMPACT -->
+        <a-entity id="moment-6" visible="false">
+            <!-- Everything fades first (silence) -->
+            <a-entity id="fade-to-black">
+                <!-- Black sphere around user -->
+                <a-sphere 
+                    radius="20"
+                    material="color: #000; side: back; opacity: 0"
+                    animation__fade="
+                        property: material.opacity;
+                        from: 0;
+                        to: 1;
+                        dur: 2000;
+                        easing: easeInQuad
+                    "
+                ></a-sphere>
+            </a-entity>
+
+            <!-- Logo forms from particles -->
+            <a-entity id="logo-formation" position="0 2 -8">
+                <!-- Particle explosion (generated dynamically) -->
+                <a-entity id="logo-particles"></a-entity>
+
+                <!-- Main Logo Text -->
+                <a-text 
+                    id="main-logo"
+                    value="DENTAL AI VR"
+                    align="center"
+                    width="20"
+                    color="#00ffff"
+                    material="
+                        emissive: #00ffff;
+                        emissiveIntensity: 0;
+                        shader: flat
+                    "
+                    opacity="0"
+                    scale="0.1 0.1 0.1"
+                    animation__scale="
+                        property: scale;
+                        from: 0.1 0.1 0.1;
+                        to: 1 1 1;
+                        dur: 2000;
+                        delay: 3000;
+                        easing: easeOutElastic
+                    "
+                    animation__appear="
+                        property: opacity;
+                        from: 0;
+                        to: 1;
+                        dur: 1000;
+                        delay: 3000
+                    "
+                    animation__glow="
+                        property: material.emissiveIntensity;
+                        from: 0;
+                        to: 2;
+                        dur: 2000;
+                        delay: 4000;
+                        easing: easeOutQuad
+                    "
+                ></a-text>
+
+                <!-- Subtitle -->
+                <a-text 
+                    value="Meta Quest 3 S"
+                    align="center"
+                    width="10"
+                    color="#ffffff"
+                    position="0 -1 0"
+                    opacity="0"
+                    animation__appear="
+                        property: opacity;
+                        from: 0;
+                        to: 0.9;
+                        dur: 1500;
+                        delay: 5000
+                    "
+                ></a-text>
+
+                <!-- Final Message -->
+                <a-text 
+                    value="THIS IS NOT A CONCEPT\nTHIS IS HAPPENING NOW"
+                    align="center"
+                    width="12"
+                    color="#00ff88"
+                    position="0 -2.5 0"
+                    opacity="0"
+                    animation__appear="
+                        property: opacity;
+                        from: 0;
+                        to: 1;
+                        dur: 2000;
+                        delay: 7000
+                    "
+                ></a-text>
+            </a-entity>
+
+            <!-- Room expands infinitely -->
+            <a-entity 
+                id="infinite-expansion"
+                animation__scale="
+                    property: scale;
+                    from: 1 1 1;
+                    to: 100 100 100;
+                    dur: 8000;
+                    delay: 3000;
+                    easing: easeOutQuad
+                "
+            >
+                <a-sphere 
+                    radius="5"
+                    material="
+                        color: #0a1428;
+                        opacity: 0.1;
+                        side: back;
+                        wireframe: true
+                    "
+                ></a-sphere>
+            </a-entity>
+
+            <!-- Light explosion -->
+            <a-entity 
+                light="type: point; color: #00ffff; intensity: 0; distance: 50"
+                position="0 2 -8"
+                animation__explode="
+                    property: light.intensity;
+                    from: 0;
+                    to: 5;
+                    dur: 500;
+                    delay: 4000
+                "
+                animation__fade="
+                    property: light.intensity;
+                    from: 5;
+                    to: 0.5;
+                    dur: 3000;
+                    delay: 4500;
+                    easing: easeOutQuad
+                "
+            ></a-entity>
+
+            <!-- Low frequency rumble -->
+            <a-entity 
+                position="0 0 0"
+                sound="src: #bass-drop; volume: 0.8; positional: false"
+            ></a-entity>
+
+            <!-- Final narration (slow, absolute) -->
+            <a-entity 
+                position="0 2 -7"
+                sound="src: #narration-5; volume: 1.2; positional: true; refDistance: 5"
+            ></a-entity>
+        </a-entity>
+
+        <!-- Lighting -->
+        <a-entity 
+            light="type: ambient; color: #112; intensity: 0.3"
+        ></a-entity>
+        <a-entity 
+            light="type: point; color: #00ffff; intensity: 0.5; distance: 20"
+            position="0 4 0"
+            animation="property: light.intensity; from: 0.5; to: 1; dur: 3000; loop: true; dir: alternate; easing: easeInOutSine"
+        ></a-entity>
+    </a-scene>
+
+    <script>
+        // Cinematic Sequence Controller
+        const moments = ['moment-1', 'moment-2', 'moment-3', 'moment-4', 'moment-5', 'moment-6'];
+        let currentMoment = 0;
+
+        // Timing (in milliseconds)
+        const timings = {
+            'moment-1': 8000,   // Darkness & breath
+            'moment-2': 10000,  // World forms
+            'moment-3': 12000,  // AI awakens
+            'moment-4': 10000,  // X-ray analysis
+            'moment-5': 10000,  // Implant planning
+            'moment-6': 15000   // Finale
+        };
+
+        // Auto-advance through moments
+        function advanceMoment() {
+            // Hide current moment
+            if (currentMoment > 0) {
+                const prevMoment = document.getElementById(moments[currentMoment - 1]);
+                if (prevMoment) prevMoment.setAttribute('visible', false);
+            }
+
+            // Show current moment
+            const currentMomentEl = document.getElementById(moments[currentMoment]);
+            if (currentMomentEl) {
+                currentMomentEl.setAttribute('visible', true);
+                console.log(`🎬 Moment ${currentMoment + 1}: ${moments[currentMoment]}`);
+            }
+
+            // Schedule next moment
+            if (currentMoment < moments.length - 1) {
+                setTimeout(() => {
+                    currentMoment++;
+                    advanceMoment();
+                }, timings[moments[currentMoment]]);
+            }
+        }
+
+        // Generate awakening particles
+        function generateAwakeningParticles() {
+            const container = document.getElementById('awakening-particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('a-sphere');
+                const x = (Math.random() - 0.5) * 10;
+                const y = Math.random() * 3;
+                const z = (Math.random() - 0.5) * 10;
+                
+                particle.setAttribute('radius', '0.02');
+                particle.setAttribute('position', `${x} ${y} ${z}`);
+                particle.setAttribute('material', 'color: #00ffff; emissive: #00ffff; emissiveIntensity: 1; shader: flat');
+                particle.setAttribute('animation', `
+                    property: material.opacity;
+                    from: 0;
+                    to: 0.8;
+                    dur: ${2000 + Math.random() * 3000};
+                    delay: ${Math.random() * 5000};
+                    loop: true;
+                    dir: alternate;
+                    easing: easeInOutSine
+                `);
+                
+                container.appendChild(particle);
+            }
+        }
+
+        // Generate AI particle cloud
+        function generateAIParticles() {
+            const container = document.getElementById('particle-cloud');
+            for (let i = 0; i < 100; i++) {
+                const particle = document.createElement('a-sphere');
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI;
+                const radius = 0.5 + Math.random() * 1;
+                
+                const x = radius * Math.sin(phi) * Math.cos(theta);
+                const y = radius * Math.sin(phi) * Math.sin(theta);
+                const z = radius * Math.cos(phi);
+                
+                particle.setAttribute('radius', '0.01');
+                particle.setAttribute('position', `${x} ${y} ${z}`);
+                particle.setAttribute('material', 'color: #00ffff; emissive: #00ffff; emissiveIntensity: 2; shader: flat');
+                particle.setAttribute('animation__converge', `
+                    property: position;
+                    to: 0 0 0;
+                    dur: 2000;
+                    easing: easeInQuad
+                `);
+                particle.setAttribute('animation__fade', `
+                    property: material.opacity;
+                    from: 1;
+                    to: 0;
+                    dur: 2000;
+                    easing: easeInQuad
+                `);
+                
+                container.appendChild(particle);
+            }
+
+            // Show avatar body after particles converge
+            setTimeout(() => {
+                document.getElementById('avatar-body').setAttribute('visible', true);
+            }, 2000);
+        }
+
+        // Generate logo explosion particles
+        function generateLogoParticles() {
+            const container = document.getElementById('logo-particles');
+            for (let i = 0; i < 200; i++) {
+                const particle = document.createElement('a-sphere');
+                const angle = (i / 200) * Math.PI * 2;
+                const radius = 0.1;
+                
+                particle.setAttribute('radius', '0.02');
+                particle.setAttribute('position', '0 0 0');
+                particle.setAttribute('material', 'color: #00ffff; emissive: #00ffff; emissiveIntensity: 2; shader: flat');
+                
+                const targetX = Math.cos(angle) * 8;
+                const targetY = Math.sin(angle) * 8;
+                const targetZ = (Math.random() - 0.5) * 3;
+                
+                particle.setAttribute('animation__explode', `
+                    property: position;
+                    from: 0 0 0;
+                    to: ${targetX} ${targetY} ${targetZ};
+                    dur: 2000;
+                    delay: ${Math.random() * 1000};
+                    easing: easeOutQuad
+                `);
+                particle.setAttribute('animation__fade', `
+                    property: material.opacity;
+                    from: 1;
+                    to: 0;
+                    dur: 2000;
+                    delay: ${1000 + Math.random() * 1000};
+                    easing: easeOutQuad
+                `);
+                
+                container.appendChild(particle);
+            }
+        }
+
+        // Haptic feedback
+        function triggerHaptic(hand, intensity = 0.5, duration = 100) {
+            const gamepad = hand === 'left' ? 
+                document.getElementById('left-hand').components['oculus-touch-controls'] :
+                document.getElementById('right-hand').components['oculus-touch-controls'];
+            
+            if (gamepad && gamepad.gamepad && gamepad.gamepad.hapticActuators) {
+                gamepad.gamepad.hapticActuators[0].pulse(intensity, duration);
+            }
+        }
+
+        // Wait for scene to load
+        document.addEventListener('DOMContentLoaded', () => {
+            const scene = document.querySelector('a-scene');
+            
+            scene.addEventListener('loaded', () => {
+                console.log('🎬 VR Experience Loaded');
+                
+                // Generate all particles
+                generateAwakeningParticles();
+                
+                // Start experience after 2 seconds
+                setTimeout(() => {
+                    advanceMoment();
+                }, 2000);
+
+                // Generate AI particles when moment 3 starts
+                setTimeout(() => {
+                    generateAIParticles();
+                }, timings['moment-1'] + timings['moment-2']);
+
+                // Generate logo particles when finale starts
+                setTimeout(() => {
+                    generateLogoParticles();
+                }, timings['moment-1'] + timings['moment-2'] + timings['moment-3'] + timings['moment-4'] + timings['moment-5'] + 3000);
+            });
+        });
+
+        // Keyboard shortcuts for testing
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' && currentMoment < moments.length - 1) {
+                currentMoment++;
+                advanceMoment();
+            }
+            if (e.key === 'ArrowLeft' && currentMoment > 0) {
+                currentMoment--;
+                advanceMoment();
+            }
+        });
+
+        console.log('🎬 CINEMATIC VR EXPERIENCE');
+        console.log('⌨️  Controls:');
+        console.log('   → Next moment');
+        console.log('   ← Previous moment');
+        console.log('🎯 Experience will auto-advance through 6 cinematic moments');
+    </script>
 </body>
 </html>
